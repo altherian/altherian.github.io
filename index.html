@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-      <meta property="og:title" content="data thingy for altheria">
-    <meta property="og:description" content="funny thing for like seeing ppls locations wihtout a map">
+      <meta property="og:title" content="Data Thingy for Altheria">
+    <meta property="og:description" content="Funny thing for like seeing people's locations without a map">
     <meta property="og:type" content="website">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -203,6 +203,28 @@
         transition: opacity 0.3s ease-out;
         z-index: 1000;
       }
+
+      .sidebar-hidden {
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+#toggleSidebar {
+  position: absolute;
+  top: 10px;
+  left: 380px; /* Initially positioned next to the sidebar */
+  z-index: 1000;
+  background-color: #3d5afe;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: left 0.3s ease-in-out;
+}
+
     </style>
   </head>
   <body>
@@ -215,108 +237,128 @@
       <div id="popup" class="popup">Copied!</div>
       <div class="player-pills" id="playerPills"></div>
     </div>
+<button id="toggleSidebar" onclick="toggleSidebar()">Hide Sidebar</button>
 
     <div class="main-content">
       <div id="output" class="loading">Loading player data...</div>
       <div class="player-cards" id="playerCards"></div>
     </div>
 
-    <script>
-      let allPlayers = [];
-      let allLands = [];
-      let displayedCards = new Set();
+<script>
+  function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
 
-      // Fetch data every second to update player cards
-      async function fetchData() {
+    if (sidebar.classList.contains('sidebar-hidden')) {
+      sidebar.classList.remove('sidebar-hidden');
+      toggleBtn.textContent = 'Hide Sidebar';
+      toggleBtn.style.left = '380px';
+    } else {
+      sidebar.classList.add('sidebar-hidden');
+      toggleBtn.textContent = 'Show Sidebar';
+      toggleBtn.style.left = '20px';
+    }
+  }
+
+    let allPlayers = [];
+    let allLands = [];
+    let displayedCards = new Set();
+
+    // Fetch data every second to update player cards
+    async function fetchData() {
         try {
-          const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
-          const playerData = await playerDataResponse.json();
+            const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
+            const playerData = await playerDataResponse.json();
 
-          const mapDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/map/1');
-          const mapData = await mapDataResponse.json();
+            const mapDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/map/1');
+            const mapData = await mapDataResponse.json();
 
-          allPlayers = playerData.players;
-          allLands = mapData.markers;
+            allPlayers = playerData.players;
+            allLands = mapData.markers;
 
-          document.getElementById('output').style.display = 'none';
-          renderPlayerPills(); // This ensures the pills are rendered or updated.
+            document.getElementById('output').style.display = 'none';
+            renderPlayerPills(); // This ensures the pills are rendered or updated.
 
-          // Update all displayed player cards with the new data
-          updatePlayerCards();
+            // Update all displayed player cards with the new data
+            updatePlayerCards();
 
         } catch (error) {
-          document.getElementById('output').textContent = 'Error fetching data: ' + error;
+            document.getElementById('output').textContent = 'Error fetching data: ' + error;
         }
-      }
+    }
 
-      // Update the player cards dynamically
-      function updatePlayerCards() {
+    // Update the player cards dynamically
+    function updatePlayerCards() {
         allPlayers.forEach(player => {
-          if (displayedCards.has(player.name)) {
-            // If the card for this player is already displayed, update it
-            const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
-            if (existingCard) {
-              const landInfo = getLandInfo(player.position);
-              const landDetails = landInfo ? extractLandName(landInfo.detail) : 'Wilderness';
+            if (displayedCards.has(player.name)) {
+                // If the card for this player is already displayed, update it
+                const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
+                if (existingCard) {
+                    const landInfo = getLandInfo(player.position);
+                    const landDetails = landInfo ? extractLandName(landInfo.detail) : 'Wilderness';
 
-              const content = existingCard.querySelector('div');
-              content.innerHTML = `
-                  <h3>${player.name}</h3>
-                  <p><strong>Position:</strong></p>
-                  <p>X: ${player.position.x.toFixed(2)}</p>
-                  <p>Y: ${player.position.y.toFixed(2)}</p>
-                  <p>Z: ${player.position.z.toFixed(2)}</p>
-                  <p><strong>Land:</strong> ${landDetails}</p>
-                  <div>
-                      <button class="copy-btn" onclick="copyCoords('${player.name}')">Copy Coords</button>
-                      <button class="remove-btn" onclick="removeCard('${player.name}')">Remove Card</button>
-                  </div>
-              `;
+                    const content = existingCard.querySelector('div');
+                    content.innerHTML = `
+                        <h3>${player.name}</h3>
+                        <p><strong>Position:</strong></p>
+                        <p>X: ${player.position.x.toFixed(2)}</p>
+                        <p>Y: ${player.position.y.toFixed(2)}</p>
+                        <p>Z: ${player.position.z.toFixed(2)}</p>
+                        <p><strong>Land:</strong> ${landDetails}</p>
+                        <div>
+                            <button class="copy-btn" onclick="copyCoords('${player.name}')">Copy Coords</button>
+                            <button class="remove-btn" onclick="removeCard('${player.name}')">Remove Card</button>
+                        </div>
+                    `;
+                }
             }
-          }
         });
-      }
+    }
 
-      function renderPlayerPills() {
+    function renderPlayerPills() {
         const pillsContainer = document.getElementById('playerPills');
         pillsContainer.innerHTML = '';
 
-        allPlayers.forEach(player => {
-          const pill = document.createElement('button');
-          pill.className = 'player-pill';
-          pill.textContent = player.name;
-          pill.dataset.playerName = player.name;
-          pill.addEventListener('click', () => {
-            togglePlayerCard(player);
-            pill.classList.toggle('active'); // Toggle active state on button click
-          });
-          pillsContainer.appendChild(pill);
-        });
-      }
+        // Sort players alphabetically by name
+        const sortedPlayers = allPlayers.sort((a, b) => a.name.localeCompare(b.name));
 
-      function togglePlayerCard(player) {
+        sortedPlayers.forEach(player => {
+            const pill = document.createElement('button');
+            pill.className = 'player-pill';
+            pill.textContent = player.name;
+            pill.dataset.playerName = player.name;
+            pill.addEventListener('click', () => {
+                togglePlayerCard(player);
+                pill.classList.toggle('active'); // Toggle active state on button click
+            });
+            pillsContainer.appendChild(pill);
+        });
+    }
+
+    function togglePlayerCard(player) {
         const pills = document.querySelectorAll('.player-pill');
         pills.forEach(pill => {
-          if (pill.dataset.playerName === player.name) {
-            pill.classList.toggle('active');
-          } else {
-            pill.classList.remove('active');
-          }
+            if (pill.dataset.playerName === player.name) {
+                pill.classList.toggle('active');
+            } else {
+                pill.classList.remove('active');
+            }
         });
 
         const cardsContainer = document.getElementById('playerCards');
 
         if (displayedCards.has(player.name)) {
-          const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
-          if (existingCard) {
-            existingCard.style.animation = 'fadeOut 0.3s ease-out';
-            setTimeout(() => {
-              cardsContainer.removeChild(existingCard);
-              displayedCards.delete(player.name);
-            }, 300);
-          }
-          return;
+            const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
+            if (existingCard) {
+                existingCard.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    cardsContainer.removeChild(existingCard);
+                    displayedCards.delete(player.name);
+                }, 300);
+            }
+            return;
         }
+        
 
         const card = document.createElement('div');
         card.className = 'player-card';
@@ -343,79 +385,107 @@
         cardsContainer.appendChild(card);
 
         displayedCards.add(player.name);
-      }
+    }
 
-      function removeCard(playerName) {
+    function removeCard(playerName) {
         const card = document.querySelector(`.player-card[data-player-name="${playerName}"]`);
         if (card) {
-          card.style.animation = 'fadeOut 0.3s ease-out';
-          setTimeout(() => {
-            card.remove();
-            displayedCards.delete(playerName);
-          }, 300);
+            card.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                card.remove();
+                displayedCards.delete(playerName);
+            }, 300);
         }
 
         const pill = document.querySelector(`.player-pill[data-player-name="${playerName}"]`);
         if (pill) {
-          pill.classList.remove('active');
+            pill.classList.remove('active');
         }
-      }
+    }
 
-      function extractLandName(detail) {
+    function extractLandName(detail) {
         if (detail.trim() === "Wilderness") {
-          return "Wilderness";
+            return "Wilderness";
         }
         if (/^[a-zA-Z0-9_-]+$/.test(detail.trim())) {
-          return detail.trim();
+            return detail.trim();
         }
         const compoundMatch = detail.match(/^([A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*)/);
         if (compoundMatch && compoundMatch[1]) {
-          return compoundMatch[1];
+            return compoundMatch[1];
         }
         const parts = detail.trim().split(/\s+/);
         if (parts.length > 0) {
-          return parts[0];
+            return parts[0];
         }
         return "Unknown Land";
-      }
+    }
 
-      function getLandInfo(playerPosition) {
+    function getLandInfo(playerPosition) {
         for (const landKey in allLands) {
-          const land = allLands[landKey];
-          const positions = land.positions;
+            const land = allLands[landKey];
+            const positions = land.positions;
 
-          const withinLand = isInsideLand(playerPosition, positions);
-          if (withinLand) {
-            return land;
-          }
+            const withinLand = isInsideLand(playerPosition, positions);
+            if (withinLand) {
+                return land;
+            }
         }
         return null;
-      }
+    }
 
-      function isInsideLand(playerPosition, landPositions) {
+    function isInsideLand(playerPosition, landPositions) {
         let minX = Math.min(...landPositions.map(p => p.x));
         let maxX = Math.max(...landPositions.map(p => p.x));
         let minZ = Math.min(...landPositions.map(p => p.z));
         let maxZ = Math.max(...landPositions.map(p => p.z));
 
         return (
-          playerPosition.x >= minX && playerPosition.x <= maxX &&
-          playerPosition.z >= minZ && playerPosition.z <= maxZ
+            playerPosition.x >= minX && playerPosition.x <= maxX &&
+            playerPosition.z >= minZ && playerPosition.z <= maxZ
         );
-      }
+    }
 
-      function setupDataRefresh() {
+    // This function handles the search input event and filters the displayed player pills
+    function searchPlayers() {
+        const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        const filteredPlayers = allPlayers.filter(player =>
+            player.name.toLowerCase().includes(searchQuery)
+        );
+        renderFilteredPlayerPills(filteredPlayers);  // Update the player pills with filtered results
+    }
+
+    // This function renders only the filtered player pills
+    function renderFilteredPlayerPills(filteredPlayers) {
+        const pillsContainer = document.getElementById('playerPills');
+        pillsContainer.innerHTML = '';  // Clear current pills
+
+        filteredPlayers.forEach(player => {
+            const pill = document.createElement('button');
+            pill.className = 'player-pill';
+            pill.textContent = player.name;
+            pill.dataset.playerName = player.name;
+            pill.addEventListener('click', () => {
+                togglePlayerCard(player);
+                pill.classList.toggle('active');
+            });
+            pillsContainer.appendChild(pill);
+        });
+    }
+
+    function setupDataRefresh() {
         fetchData();  // Fetch data for the first time
         setInterval(fetchData, 1000);  // Refetch data every second
-      }
+    }
 
-      document.getElementById('searchInput').addEventListener('keyup', (event) => {
+    document.getElementById('searchInput').addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
-          searchPlayers();
+            searchPlayers();
         }
-      });
+    });
 
-      setupDataRefresh();
-    </script>
+    setupDataRefresh();
+</script>
+
   </body>
 </html>
