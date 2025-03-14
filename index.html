@@ -228,6 +228,7 @@
       let allLands = [];
       let displayedCards = new Set();
 
+      // Fetch data every second to update player cards
       async function fetchData() {
         try {
           const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
@@ -240,10 +241,42 @@
           allLands = mapData.markers;
 
           document.getElementById('output').style.display = 'none';
-          renderPlayerPills();
+          renderPlayerPills(); // This ensures the pills are rendered or updated.
+
+          // Update all displayed player cards with the new data
+          updatePlayerCards();
+
         } catch (error) {
           document.getElementById('output').textContent = 'Error fetching data: ' + error;
         }
+      }
+
+      // Update the player cards dynamically
+      function updatePlayerCards() {
+        allPlayers.forEach(player => {
+          if (displayedCards.has(player.name)) {
+            // If the card for this player is already displayed, update it
+            const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
+            if (existingCard) {
+              const landInfo = getLandInfo(player.position);
+              const landDetails = landInfo ? extractLandName(landInfo.detail) : 'Wilderness';
+
+              const content = existingCard.querySelector('div');
+              content.innerHTML = `
+                  <h3>${player.name}</h3>
+                  <p><strong>Position:</strong></p>
+                  <p>X: ${player.position.x.toFixed(2)}</p>
+                  <p>Y: ${player.position.y.toFixed(2)}</p>
+                  <p>Z: ${player.position.z.toFixed(2)}</p>
+                  <p><strong>Land:</strong> ${landDetails}</p>
+                  <div>
+                      <button class="copy-btn" onclick="copyCoords('${player.name}')">Copy Coords</button>
+                      <button class="remove-btn" onclick="removeCard('${player.name}')">Remove Card</button>
+                  </div>
+              `;
+            }
+          }
+        });
       }
 
       function renderPlayerPills() {
@@ -374,8 +407,8 @@
       }
 
       function setupDataRefresh() {
-        fetchData();
-        setInterval(fetchData, 1000);
+        fetchData();  // Fetch data for the first time
+        setInterval(fetchData, 1000);  // Refetch data every second
       }
 
       document.getElementById('searchInput').addEventListener('keyup', (event) => {
