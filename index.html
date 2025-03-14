@@ -224,77 +224,44 @@
     </div>
 
     <script>
-      let allPlayers = [];
-      let allLands = [];
-      let displayedCards = new Set();
+let allPlayers = [];
+let allLands = [];
+let displayedCards = new Set();
 
-      async function fetchData() {
-        try {
-          const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
-          const playerData = await playerDataResponse.json();
+// Fetch data every second to update player cards
+async function fetchData() {
+  try {
+    const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
+    const playerData = await playerDataResponse.json();
 
-          const mapDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/map/1');
-          const mapData = await mapDataResponse.json();
+    const mapDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/map/1');
+    const mapData = await mapDataResponse.json();
 
-          allPlayers = playerData.players;
-          allLands = mapData.markers;
+    allPlayers = playerData.players;
+    allLands = mapData.markers;
 
-          document.getElementById('output').style.display = 'none';
-          renderPlayerPills();
-        } catch (error) {
-          document.getElementById('output').textContent = 'Error fetching data: ' + error;
-        }
-      }
+    document.getElementById('output').style.display = 'none';
+    renderPlayerPills(); // This ensures the pills are rendered or updated.
 
-      function renderPlayerPills() {
-        const pillsContainer = document.getElementById('playerPills');
-        pillsContainer.innerHTML = '';
+    // Update all displayed player cards with the new data
+    updatePlayerCards();
 
-        allPlayers.forEach(player => {
-          const pill = document.createElement('button');
-          pill.className = 'player-pill';
-          pill.textContent = player.name;
-          pill.dataset.playerName = player.name;
-          pill.addEventListener('click', () => {
-            togglePlayerCard(player);
-            pill.classList.toggle('active'); // Toggle active state on button click
-          });
-          pillsContainer.appendChild(pill);
-        });
-      }
+  } catch (error) {
+    document.getElementById('output').textContent = 'Error fetching data: ' + error;
+  }
+}
 
-      function togglePlayerCard(player) {
-        const pills = document.querySelectorAll('.player-pill');
-        pills.forEach(pill => {
-          if (pill.dataset.playerName === player.name) {
-            pill.classList.toggle('active');
-          } else {
-            pill.classList.remove('active');
-          }
-        });
-
-        const cardsContainer = document.getElementById('playerCards');
-
-        if (displayedCards.has(player.name)) {
-          const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
-          if (existingCard) {
-            existingCard.style.animation = 'fadeOut 0.3s ease-out';
-            setTimeout(() => {
-              cardsContainer.removeChild(existingCard);
-              displayedCards.delete(player.name);
-            }, 300);
-          }
-          return;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'player-card';
-        card.dataset.playerName = player.name;
-
+// Update the player cards dynamically
+function updatePlayerCards() {
+  allPlayers.forEach(player => {
+    if (displayedCards.has(player.name)) {
+      // If the card for this player is already displayed, update it
+      const existingCard = document.querySelector(`.player-card[data-player-name="${player.name}"]`);
+      if (existingCard) {
         const landInfo = getLandInfo(player.position);
         const landDetails = landInfo ? extractLandName(landInfo.detail) : 'Wilderness';
 
-        const content = document.createElement('div');
+        const content = existingCard.querySelector('div');
         content.innerHTML = `
             <h3>${player.name}</h3>
             <p><strong>Position:</strong></p>
@@ -307,6 +274,10 @@
                 <button class="remove-btn" onclick="removeCard('${player.name}')">Remove Card</button>
             </div>
         `;
+      }
+    }
+  });
+}
 
         card.appendChild(content);
         cardsContainer.appendChild(card);
