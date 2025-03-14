@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
   <head>
       <meta property="og:title" content="Data Thingy for Altheria">
@@ -8,6 +8,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Player Data Thingy for Altheria</title>
     <style>
+    .sidebar h2 {
+  margin-top: 0;
+  height: 40px; /* Fixed height to prevent resizing */
+  display: flex;
+  align-items: center; /* Keeps text vertically centered */
+}
+.sidebar {
+  min-height: 100vh; /* Ensures it doesn't shrink */
+}
+
+#output {
+  min-height: 20px; /* Adjust based on expected text height */
+}
+
+
       /* Custom scrollbar styling */
       ::-webkit-scrollbar {
         width: 12px; /* Vertical scrollbar width */
