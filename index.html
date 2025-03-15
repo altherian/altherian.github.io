@@ -177,6 +177,8 @@
       /* Loading text */
       .loading {
         color: #888;
+        padding: 40px;
+        
       }
 
       /* Fade in animation */
@@ -239,7 +241,6 @@
   cursor: pointer;
   transition: left 0.3s ease-in-out;
 }
-
     </style>
   </head>
   <body>
@@ -258,6 +259,7 @@
       <div id="output" class="loading">Loading player data...</div>
       <div class="player-cards" id="playerCards"></div>
     </div>
+    
 
 <script>
   function toggleSidebar() {
@@ -328,7 +330,18 @@
                 }
             }
         });
+        removeDisconnectedPlayers(); // This ensures disconnected players' cards are removed
     }
+
+function removeDisconnectedPlayers() {
+    const currentPlayerNames = new Set(allPlayers.map(player => player.name));
+    Array.from(displayedCards).forEach(playerName => {
+        if (!currentPlayerNames.has(playerName)) {
+            removeCard(playerName);
+        }
+    });
+}
+
 
     function renderPlayerPills() {
         const pillsContainer = document.getElementById('playerPills');
@@ -351,15 +364,6 @@
     }
 
     function togglePlayerCard(player) {
-        const pills = document.querySelectorAll('.player-pill');
-        pills.forEach(pill => {
-            if (pill.dataset.playerName === player.name) {
-                pill.classList.toggle('active');
-            } else {
-                pill.classList.remove('active');
-            }
-        });
-
         const cardsContainer = document.getElementById('playerCards');
 
         if (displayedCards.has(player.name)) {
@@ -373,7 +377,6 @@
             }
             return;
         }
-        
 
         const card = document.createElement('div');
         card.className = 'player-card';
@@ -415,6 +418,17 @@
         const pill = document.querySelector(`.player-pill[data-player-name="${playerName}"]`);
         if (pill) {
             pill.classList.remove('active');
+        }
+    }
+
+    function removeDisconnectedPlayers() {
+        const currentPlayerNames = new Set(allPlayers.map(player => player.name));
+        
+        // Check all displayed cards
+        for (const displayedPlayerName of displayedCards) {
+            if (!currentPlayerNames.has(displayedPlayerName)) {
+                removeCard(displayedPlayerName);
+            }
         }
     }
 
@@ -461,14 +475,34 @@
         );
     }
 
-    // This function handles the search input event and filters the displayed player pills
-    function searchPlayers() {
-        const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-        const filteredPlayers = allPlayers.filter(player =>
-            player.name.toLowerCase().includes(searchQuery)
-        );
-        renderFilteredPlayerPills(filteredPlayers);  // Update the player pills with filtered results
+function copyCoords(playerName) {
+    const player = allPlayers.find(p => p.name === playerName);
+    if (player) {
+        const coords = `X: ${player.position.x.toFixed(2)}, Y: ${player.position.y.toFixed(2)}, Z: ${player.position.z.toFixed(2)}`;
+        navigator.clipboard.writeText(coords)
+            .then(() => showPopup('Copied!'))
+            .catch(err => console.error('Copy failed:', err));
     }
+}
+
+function showPopup(message) {
+    const popup = document.getElementById('popup');
+    popup.textContent = message;
+    popup.style.display = 'block';
+    popup.style.opacity = '1';
+    setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.style.display = 'none', 300);
+    }, 2000);
+}
+
+function searchPlayers() {
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    const filteredPlayers = allPlayers.filter(player =>
+        player.name.toLowerCase().includes(searchQuery)
+    );
+    renderFilteredPlayerPills(filteredPlayers);
+}
 
     // This function renders only the filtered player pills
     function renderFilteredPlayerPills(filteredPlayers) {
@@ -490,7 +524,7 @@
 
     function setupDataRefresh() {
         fetchData();  // Fetch data for the first time
-        setInterval(fetchData, 1000);  // Refetch data every second
+        setInterval(fetchData, 800);  // Refetch data every second
     }
 
     document.getElementById('searchInput').addEventListener('keyup', (event) => {
