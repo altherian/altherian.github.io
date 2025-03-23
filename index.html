@@ -284,7 +284,7 @@
     // Fetch data every second to update player cards
     async function fetchData() {
         try {
-            const playerDataResponse = await fetch('https://api.apibythatoneguy.workers.dev/player/1');
+            const playerDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/player/1');
             const playerData = await playerDataResponse.json();
 
             const mapDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/map/1');
