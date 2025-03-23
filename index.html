@@ -281,28 +281,60 @@
     let allLands = [];
     let displayedCards = new Set();
 
-    // Fetch data every second to update player cards
-    async function fetchData() {
-        try {
-            const playerDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/player/1');
-            const playerData = await playerDataResponse.json();
-
-            const mapDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/map/1');
-            const mapData = await mapDataResponse.json();
-
-            allPlayers = playerData.players;
-            allLands = mapData.markers;
-
-            document.getElementById('output').style.display = 'none';
-            renderPlayerPills(); // This ensures the pills are rendered or updated.
-
-            // Update all displayed player cards with the new data
-            updatePlayerCards();
-
-        } catch (error) {
-            document.getElementById('output').textContent = 'Error fetching data: ' + error;
+async function fetchData() {
+    try {
+        // Fetch player data
+        const playerDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/player/1', {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!playerDataResponse.ok) {
+            throw new Error(`Player API returned ${playerDataResponse.status}: ${playerDataResponse.statusText}`);
         }
+        
+        const playerData = await playerDataResponse.json();
+        console.log("Player data received:", playerData); // Debug log
+        
+        // Fetch map data
+        const mapDataResponse = await fetch('https://altheriaapi.netlify.app/.netlify/functions/api/map/1', {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!mapDataResponse.ok) {
+            throw new Error(`Map API returned ${mapDataResponse.status}: ${mapDataResponse.statusText}`);
+        }
+        
+        const mapData = await mapDataResponse.json();
+        console.log("Map data received:", mapData); // Debug log
+        
+        // Check if data structures are as expected
+        if (!playerData || !Array.isArray(playerData.players)) {
+            throw new Error('Invalid player data structure: players array missing');
+        }
+        
+        if (!mapData || !mapData.markers) {
+            throw new Error('Invalid map data structure: markers object missing');
+        }
+        
+        allPlayers = playerData.players;
+        allLands = mapData.markers;
+        
+        document.getElementById('output').style.display = 'none';
+        renderPlayerPills();
+        updatePlayerCards();
+        
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('output').textContent = 'Error fetching data: ' + error.message;
     }
+}
 
     // Update the player cards dynamically
     function updatePlayerCards() {
@@ -450,18 +482,29 @@ function removeDisconnectedPlayers() {
         return "Unknown Land";
     }
 
-    function getLandInfo(playerPosition) {
-        for (const landKey in allLands) {
-            const land = allLands[landKey];
-            const positions = land.positions;
-
-            const withinLand = isInsideLand(playerPosition, positions);
-            if (withinLand) {
-                return land;
-            }
-        }
+function getLandInfo(playerPosition) {
+    if (!allLands || typeof allLands !== 'object') {
+        console.warn('allLands is not properly defined:', allLands);
         return null;
     }
+    
+    for (const landKey in allLands) {
+        const land = allLands[landKey];
+        
+        if (!land || !land.positions || !Array.isArray(land.positions)) {
+            console.warn(`Invalid land data for ${landKey}:`, land);
+            continue;
+        }
+        
+        const positions = land.positions;
+        
+        const withinLand = isInsideLand(playerPosition, positions);
+        if (withinLand) {
+            return land;
+        }
+    }
+    return null;
+}
 
     function isInsideLand(playerPosition, landPositions) {
         let minX = Math.min(...landPositions.map(p => p.x));
